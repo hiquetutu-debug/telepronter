@@ -232,41 +232,105 @@ Use este app apenas com fins educacionais e pessoais.`;
 
     async fetchLyricsImproved(songQuery) {
         try {
-            // Tenta múltiplos formatos de busca
-            const parts = songQuery.split(' - ').map(s => s.trim());
+            // Step 1: Limpar a entrada
+            let cleaned = this.cleanSongQuery(songQuery);
             
-            // Formato 1: Artista - Título
-            if (parts.length === 2) {
-                const [artist, title] = parts;
-                const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.lyrics && data.lyrics.length > 100) {
-                        return { found: true, lyrics: data.lyrics };
-                    }
-                }
-                
-                // Formato 2: Título - Artista (invertido)
-                const response2 = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(title)}/${encodeURIComponent(artist)}`);
-                if (response2.ok) {
-                    const data = await response2.json();
-                    if (data.lyrics && data.lyrics.length > 100) {
-                        return { found: true, lyrics: data.lyrics };
-                    }
+            if (!cleaned) {
+                return { 
+                    found: false, 
+                    lyrics: `❌ Entrada inválida: "${songQuery}"` 
+                };
+            }
+
+            // Step 2: Tentar múltiplos separadores e formatos
+            const separators = [' - ', ' -- ', ' / ', ' de ', ' by ', '|', '–', '—'];
+            const formats = this.generateSearchFormats(cleaned, separators);
+
+            for (let format of formats) {
+                const result = await this.searchLyricsAPI(format.artist, format.title);
+                if (result.found) {
+                    return { found: true, lyrics: result.lyrics };
                 }
             }
             
+            // Step 3: Se não encontrou com separadores, tenta palavra-chave única
+            const singleWordResult = await this.searchLyricsAPI(cleaned, '');
+            if (singleWordResult.found) {
+                return { found: true, lyrics: singleWordResult.lyrics };
+            }
+
             // Se não encontrou
             return { 
                 found: false, 
-                lyrics: `❌ Letra não encontrada para: "${songQuery}"\n\nDicas:\n• Verifique se o nome está correto\n• Use o formato: "Artista - Título"\n• Tente buscar no Google o nome exato\n\nExemplos que funcionam:\n• The Beatles - Imagine\n• Nirvana - In Bloom\n• Legião Urbana - Que País É Este` 
+                lyrics: `❌ Letra não encontrada para: "${songQuery}"\n\nTente:\n• Verificar ortografia\n• Usar formato "Artista - Título" ou "Título - Artista"\n• Procurar o nome no Google para confirmar\n\nExemplos que funcionam:\n• Nirvana - In Bloom\n• In Bloom - Nirvana\n• The Beatles - Imagine` 
             };
         } catch (error) {
             console.log('Erro ao buscar letras:', error);
             return { 
                 found: false, 
-                lyrics: `❌ Erro ao conectar com o servidor.\n\nVerifique sua conexão de internet e tente novamente.` 
+                lyrics: `❌ Erro ao conectar com o servidor.\n\nVerifique sua conexão de internet.` 
             };
+        }
+    }
+
+    cleanSongQuery(query) {
+        // Remove números no início (1., 2., etc)
+        let cleaned = query.replace(/^\d+\.\s*/, '').trim();
+        
+        // Remove caracteres especiais extras mas mantém separadores
+        cleaned = cleaned.replace(/\s+/g, ' ').trim();
+        
+        return cleaned || null;
+    }
+
+    generateSearchFormats(songQuery, separators) {
+        const formats = [];
+        
+        for (let sep of separators) {
+            if (songQuery.includes(sep)) {
+                const parts = songQuery.split(sep).map(p => p.trim()).filter(p => p);
+                
+                if (parts.length === 2) {
+                    // Formato 1: primeira parte = artista, segunda = título
+                    formats.push({
+                        artist: parts[0],
+                        title: parts[1]
+                    });
+                    
+                    // Formato 2: invertido
+                    formats.push({
+                        artist: parts[1],
+                        title: parts[0]
+                    });
+                }
+            }
+        }
+        
+        return formats;
+    }
+
+    async searchLyricsAPI(artist, title) {
+        try {
+            // Se apenas um termo, tenta buscar como artista com qualquer título
+            if (!title || title.length === 0) {
+                // Isso depende da API - lyrics.ovh precisa de ambos
+                return { found: false };
+            }
+
+            const url = `https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.lyrics && data.lyrics.length > 100) {
+                    return { found: true, lyrics: data.lyrics };
+                }
+            }
+            
+            return { found: false };
+        } catch (error) {
+            console.log(`Erro ao buscar ${artist} - ${title}:`, error);
+            return { found: false };
         }
     }
 
