@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="App de letras de músicas com auto-scroll">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1a2e' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%2316c784'/><path d='M96 60v72M80 80l32-20' stroke='white' stroke-width='8' stroke-linecap='round'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%231a1a2e' width='192' height='192'/><circle cx='96' cy='96' r='60' fill='%2316c784'/></svg>">
+    <title>Teleprompter - Letras</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🎵 Teleprompter</h1>
+                <span class="install-prompt" id="installPrompt">📥 Instalar</span>
+            </div>
+        </header>
+
+        <!-- Modo de Input -->
+        <div class="input-section">
+            <input 
+                type="text" 
+                id="musicInput" 
+                placeholder="Ex: Imagine - The Beatles"
+                class="input-field"
+            >
+            <button id="addBtn" class="btn btn-add">Adicionar</button>
+            <button id="clearBtn" class="btn btn-secondary">Limpar Tudo</button>
+        </div>
+
+        <!-- Lista de Músicas -->
+        <div class="playlist-section">
+            <h2>Sua Playlist</h2>
+            <ul id="playlistUl" class="playlist">
+                <li class="empty-state">Adicione uma música para começar!</li>
+            </ul>
+        </div>
+
+        <!-- Leitor de Letras -->
+        <div id="lyricsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="lyrics-header">
+                    <button class="btn-close" id="closeLyrics">&times;</button>
+                    <h2 id="currentSongTitle">Título da Música</h2>
+                </div>
+
+                <div class="lyrics-controls">
+                    <button id="playPauseBtn" class="btn btn-control btn-play">▶ Play</button>
+                    <div class="speed-control">
+                        <label for="speedSlider">Velocidade:</label>
+                        <input type="range" id="speedSlider" min="0.5" max="3" step="0.5" value="1" class="slider">
+                        <span id="speedValue">1x</span>
+                    </div>
+                    <button id="resetBtn" class="btn btn-secondary">↻ Reset</button>
+                </div>
+
+                <div id="lyricsContainer" class="lyrics-container">
+                    <div class="lyrics-text" id="lyricsText">
+                        Carregando letras...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="loading hidden">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
