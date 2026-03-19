@@ -64,28 +64,43 @@ class TeleprompterApp {
         const input = this.musicInput.value.trim();
         if (!input) return;
         
-        // Verifica se há quebras de linha (múltiplas músicas)
-        if (input.includes('\n')) {
-            this.addBatchSongs(input);
+        // Remove quebras de linha do Windows (\r\n) e Unix (\n)
+        const lines = input
+            .split(/[\r\n]+/) // Quebra por \r\n ou \n
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        if (lines.length === 0) return;
+
+        // Se tem mais de uma linha, trata como lote
+        if (lines.length > 1) {
+            this.addBatchSongs(null, lines);
         } else {
             // Uma única música
-            this.playlist.push(input);
+            this.playlist.push(lines[0]);
             this.savePlaylist();
             this.musicInput.value = '';
             this.renderPlaylist();
         }
     }
 
-    addBatchSongs(input = null) {
-        const text = input || this.musicInput.value.trim();
-        if (!text) {
-            alert('Digite ou cole as músicas!');
-            return;
-        }
+    addBatchSongs(input = null, preProcessedLines = null) {
+        let lines;
+        
+        if (preProcessedLines) {
+            lines = preProcessedLines;
+        } else {
+            const text = input || this.musicInput.value.trim();
+            if (!text) {
+                alert('Digite ou cole as músicas!');
+                return;
+            }
 
-        const lines = text.split('\n')
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
+            lines = text
+                .split(/[\r\n]+/)
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
+        }
 
         if (lines.length === 0) return;
 
