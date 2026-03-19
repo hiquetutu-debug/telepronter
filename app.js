@@ -23,6 +23,15 @@ class TeleprompterApp {
         this.clearBtn = document.getElementById('clearBtn');
         this.playlistUl = document.getElementById('playlistUl');
         
+        // Batch mode
+        this.batchInput = document.getElementById('batchInput');
+        this.addBatchBtn = document.getElementById('addBatchBtn');
+        this.clearBatchBtn = document.getElementById('clearBatchBtn');
+        this.singleModeBtn = document.getElementById('singleModeBtn');
+        this.batchModeBtn = document.getElementById('batchModeBtn');
+        this.singleMode = document.getElementById('singleMode');
+        this.batchMode = document.getElementById('batchMode');
+        
         this.modal = document.getElementById('lyricsModal');
         this.closeLyricsBtn = document.getElementById('closeLyrics');
         this.currentSongTitle = document.getElementById('currentSongTitle');
@@ -48,6 +57,17 @@ class TeleprompterApp {
         document.getElementById('clearGeneratedBtn').addEventListener('click', () => this.clearGeneratedLyrics());
         document.getElementById('closeGeneratedSection').addEventListener('click', () => this.closeGeneratedSection());
         
+        // Batch mode listeners
+        this.singleModeBtn.addEventListener('click', () => this.switchMode('single'));
+        this.batchModeBtn.addEventListener('click', () => this.switchMode('batch'));
+        this.addBatchBtn.addEventListener('click', () => this.addBatchSongs());
+        this.clearBatchBtn.addEventListener('click', () => this.clearBatchInput());
+        this.batchInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                this.addBatchSongs();
+            }
+        });
+        
         this.closeLyricsBtn.addEventListener('click', () => this.closeModal());
         this.playPauseBtn.addEventListener('click', () => this.toggleScroll());
         this.speedSlider.addEventListener('input', (e) => this.updateSpeed(e.target.value));
@@ -66,6 +86,58 @@ class TeleprompterApp {
         this.savePlaylist();
         this.musicInput.value = '';
         this.renderPlaylist();
+    }
+
+    switchMode(mode) {
+        if (mode === 'single') {
+            this.singleMode.classList.add('active');
+            this.batchMode.classList.add('hidden');
+            this.singleModeBtn.classList.add('active');
+            this.batchModeBtn.classList.remove('active');
+            this.musicInput.focus();
+        } else {
+            this.singleMode.classList.remove('active');
+            this.batchMode.classList.remove('hidden');
+            this.singleModeBtn.classList.remove('active');
+            this.batchModeBtn.classList.add('active');
+            this.batchInput.focus();
+        }
+    }
+
+    addBatchSongs() {
+        const input = this.batchInput.value.trim();
+        if (!input) {
+            alert('Cole as músicas no campo de texto!');
+            return;
+        }
+
+        // Quebrar por linhas e adicionar cada uma
+        const lines = input.split('\n')
+            .map(line => line.trim())
+            .filter(line => line.length > 0);
+
+        if (lines.length === 0) return;
+
+        let added = 0;
+        lines.forEach(line => {
+            if (line) {
+                this.playlist.push(line);
+                added++;
+            }
+        });
+
+        this.savePlaylist();
+        this.renderPlaylist();
+        this.batchInput.value = '';
+        
+        // Feedback visual
+        alert(`✅ ${added} música(s) adicionada(s)!`);
+        this.switchMode('single');
+    }
+
+    clearBatchInput() {
+        this.batchInput.value = '';
+        this.batchInput.focus();
     }
 
     clearPlaylist() {
