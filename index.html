@@ -35,10 +35,26 @@
 
         <!-- Lista de Músicas -->
         <div class="playlist-section">
-            <h2>Sua Playlist</h2>
+            <div class="playlist-header">
+                <h2>Sua Playlist</h2>
+                <div class="playlist-actions">
+                    <button id="generateAllBtn" class="btn btn-generate">⚡ Gerar Todas</button>
+                    <button id="clearGeneratedBtn" class="btn btn-secondary">🗑️ Limpar Letras</button>
+                </div>
+            </div>
             <ul id="playlistUl" class="playlist">
                 <li class="empty-state">Adicione uma música para começar!</li>
             </ul>
+        </div>
+        
+        <!-- Letras Geradas -->
+        <div id="generatedLyricsSection" class="generated-section hidden">
+            <div class="generated-header">
+                <h2>Letras Geradas</h2>
+                <button class="btn-close" id="closeGeneratedSection">&times;</button>
+            </div>
+            <div id="generatedLyricsList" class="generated-list">
+            </div>
         </div>
 
         <!-- Leitor de Letras -->

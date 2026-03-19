@@ -1,17 +1,20 @@
 class TeleprompterApp {
     constructor() {
         this.playlist = this.loadPlaylist();
+        this.generatedLyrics = this.loadGeneratedLyrics();
         this.currentSong = null;
         this.isScrolling = false;
         this.scrollSpeed = 1;
         this.scrollInterval = null;
         this.scrollContainer = null;
+        this.isGeneratingAll = false;
         
         this.initElements();
         this.attachEventListeners();
         this.registerServiceWorker();
         this.handleInstallPrompt();
         this.renderPlaylist();
+        this.renderGeneratedLyrics();
     }
 
     initElements() {
@@ -40,6 +43,10 @@ class TeleprompterApp {
         this.musicInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.addSong();
         });
+        
+        document.getElementById('generateAllBtn').addEventListener('click', () => this.generateAllLyrics());
+        document.getElementById('clearGeneratedBtn').addEventListener('click', () => this.clearGeneratedLyrics());
+        document.getElementById('closeGeneratedSection').addEventListener('click', () => this.closeGeneratedSection());
         
         this.closeLyricsBtn.addEventListener('click', () => this.closeModal());
         this.playPauseBtn.addEventListener('click', () => this.toggleScroll());
@@ -267,6 +274,108 @@ Use este app apenas com fins educacionais e pessoais.`;
             console.log('PWA was installed');
             installPrompt.classList.add('hidden');
         });
+    }
+
+    async generateAllLyrics() {
+        if (this.playlist.length === 0) {
+            alert('Adicione músicas à playlist primeiro!');
+            return;
+        }
+        
+        if (this.isGeneratingAll) return;
+        this.isGeneratingAll = true;
+        
+        const generateAllBtn = document.getElementById('generateAllBtn');
+        generateAllBtn.disabled = true;
+        generateAllBtn.textContent = '⏳ Gerando...';
+        
+        this.generatedLyrics = [];
+        
+        for (let i = 0; i < this.playlist.length; i++) {
+            const song = this.playlist[i];
+            this.showLoading(true);
+            const lyrics = await this.fetchLyrics(song);
+            this.generatedLyrics.push({
+                song: song,
+                lyrics: lyrics,
+                timestamp: new Date().toLocaleTimeString()
+            });
+            this.showLoading(false);
+            this.renderGeneratedLyrics();
+        }
+        
+        generateAllBtn.disabled = false;
+        generateAllBtn.textContent = '⚡ Gerar Todas';
+        this.isGeneratingAll = false;
+        this.showGeneratedSection();
+    }
+
+    renderGeneratedLyrics() {
+        const section = document.getElementById('generatedLyricsSection');
+        const list = document.getElementById('generatedLyricsList');
+        
+        if (this.generatedLyrics.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+        
+        section.classList.remove('hidden');
+        list.innerHTML = this.generatedLyrics.map((item, index) => `
+            <div class="generated-item">
+                <div class="generated-item-header">
+                    <h3>${index + 1}. ${this.escapeHtml(item.song)}</h3>
+                    <span class="generated-time">${item.timestamp}</span>
+                </div>
+                <div class="generated-item-lyrics">
+                    ${item.lyrics.split('\n').slice(0, 10).join('<br>')}
+                    ${item.lyrics.split('\n').length > 10 ? '<p class="more-text">...</p>' : ''}
+                </div>
+                <div class="generated-item-actions">
+                    <button class="btn-small btn-play-item" onclick="app.openGeneratedLyrics(${index})">Ver Completo</button>
+                    <button class="btn-small btn-delete" onclick="app.deleteGeneratedLyric(${index})">Deletar</button>
+                </div>
+            </div>
+        `).join('');
+        
+        this.saveGeneratedLyrics();
+    }
+
+    openGeneratedLyrics(index) {
+        const item = this.generatedLyrics[index];
+        this.currentSongTitle.textContent = item.song;
+        this.lyricsText.textContent = item.lyrics;
+        this.modal.classList.remove('hidden');
+        this.resetScroll();
+    }
+
+    deleteGeneratedLyric(index) {
+        this.generatedLyrics.splice(index, 1);
+        this.renderGeneratedLyrics();
+    }
+
+    clearGeneratedLyrics() {
+        if (confirm('Tem certeza que deseja limpar todas as letras geradas?')) {
+            this.generatedLyrics = [];
+            this.renderGeneratedLyrics();
+            this.closeGeneratedSection();
+        }
+    }
+
+    showGeneratedSection() {
+        document.getElementById('generatedLyricsSection').classList.remove('hidden');
+    }
+
+    closeGeneratedSection() {
+        document.getElementById('generatedLyricsSection').classList.add('hidden');
+    }
+
+    saveGeneratedLyrics() {
+        localStorage.setItem('telepromter_generated', JSON.stringify(this.generatedLyrics));
+    }
+
+    loadGeneratedLyrics() {
+        const saved = localStorage.getItem('telepromter_generated');
+        return saved ? JSON.parse(saved) : [];
     }
 
     escapeHtml(text) {
