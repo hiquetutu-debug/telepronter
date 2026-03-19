@@ -23,35 +23,16 @@
 
         <!-- Modo de Input -->
         <div class="input-section">
-            <div class="input-mode-tabs">
-                <button id="singleModeBtn" class="tab-btn active">📝 Única</button>
-                <button id="batchModeBtn" class="tab-btn">📋 Lote</button>
+            <textarea 
+                id="musicInput" 
+                placeholder="Digite uma música ou cole várias (uma por linha)&#10;Exemplo:&#10;Imagine - The Beatles&#10;In Bloom – Nirvana&#10;Bohemian Rhapsody - Queen"
+                class="input-field input-textarea"
+                rows="4"
+            ></textarea>
+            <div class="input-buttons">
+                <button id="addBtn" class="btn btn-add">➕ Adicionar</button>
+                <button id="clearBtn" class="btn btn-secondary">🗑️ Limpar Playlist</button>
             </div>
-            
-            <!-- Modo Única -->
-            <div id="singleMode" class="input-mode active">
-                <input 
-                    type="text" 
-                    id="musicInput" 
-                    placeholder="Ex: Imagine - The Beatles"
-                    class="input-field"
-                >
-                <button id="addBtn" class="btn btn-add">Adicionar</button>
-            </div>
-            
-            <!-- Modo Lote -->
-            <div id="batchMode" class="input-mode hidden">
-                <textarea 
-                    id="batchInput" 
-                    placeholder="Cole suas músicas aqui (uma por linha)&#10;Exemplo:&#10;Imagine - The Beatles&#10;Bohemian Rhapsody - Queen&#10;Stairway to Heaven - Led Zeppelin"
-                    class="input-field batch-textarea"
-                    rows="6"
-                ></textarea>
-                <button id="addBatchBtn" class="btn btn-add">✅ Adicionar Todas</button>
-                <button id="clearBatchBtn" class="btn btn-secondary">Limpar Campo</button>
-            </div>
-            
-            <button id="clearBtn" class="btn btn-secondary">🗑️ Limpar Playlist</button>
         </div>
 
         <!-- Lista de Músicas -->

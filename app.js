@@ -23,15 +23,6 @@ class TeleprompterApp {
         this.clearBtn = document.getElementById('clearBtn');
         this.playlistUl = document.getElementById('playlistUl');
         
-        // Batch mode
-        this.batchInput = document.getElementById('batchInput');
-        this.addBatchBtn = document.getElementById('addBatchBtn');
-        this.clearBatchBtn = document.getElementById('clearBatchBtn');
-        this.singleModeBtn = document.getElementById('singleModeBtn');
-        this.batchModeBtn = document.getElementById('batchModeBtn');
-        this.singleMode = document.getElementById('singleMode');
-        this.batchMode = document.getElementById('batchMode');
-        
         this.modal = document.getElementById('lyricsModal');
         this.closeLyricsBtn = document.getElementById('closeLyrics');
         this.currentSongTitle = document.getElementById('currentSongTitle');
@@ -47,26 +38,17 @@ class TeleprompterApp {
     }
 
     attachEventListeners() {
-        this.addBtn.addEventListener('click', () => this.addSong());
+        this.addBtn.addEventListener('click', () => this.addSongs());
         this.clearBtn.addEventListener('click', () => this.clearPlaylist());
-        this.musicInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.addSong();
+        this.musicInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                this.addSongs();
+            }
         });
         
         document.getElementById('generateAllBtn').addEventListener('click', () => this.generateAllLyrics());
         document.getElementById('clearGeneratedBtn').addEventListener('click', () => this.clearGeneratedLyrics());
         document.getElementById('closeGeneratedSection').addEventListener('click', () => this.closeGeneratedSection());
-        
-        // Batch mode listeners
-        this.singleModeBtn.addEventListener('click', () => this.switchMode('single'));
-        this.batchModeBtn.addEventListener('click', () => this.switchMode('batch'));
-        this.addBatchBtn.addEventListener('click', () => this.addBatchSongs());
-        this.clearBatchBtn.addEventListener('click', () => this.clearBatchInput());
-        this.batchInput.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.key === 'Enter') {
-                this.addBatchSongs();
-            }
-        });
         
         this.closeLyricsBtn.addEventListener('click', () => this.closeModal());
         this.playPauseBtn.addEventListener('click', () => this.toggleScroll());
@@ -78,41 +60,30 @@ class TeleprompterApp {
         });
     }
 
-    addSong() {
+    addSongs() {
         const input = this.musicInput.value.trim();
         if (!input) return;
         
-        this.playlist.push(input);
-        this.savePlaylist();
-        this.musicInput.value = '';
-        this.renderPlaylist();
-    }
-
-    switchMode(mode) {
-        if (mode === 'single') {
-            this.singleMode.classList.add('active');
-            this.batchMode.classList.add('hidden');
-            this.singleModeBtn.classList.add('active');
-            this.batchModeBtn.classList.remove('active');
-            this.musicInput.focus();
+        // Verifica se há quebras de linha (múltiplas músicas)
+        if (input.includes('\n')) {
+            this.addBatchSongs(input);
         } else {
-            this.singleMode.classList.remove('active');
-            this.batchMode.classList.remove('hidden');
-            this.singleModeBtn.classList.remove('active');
-            this.batchModeBtn.classList.add('active');
-            this.batchInput.focus();
+            // Uma única música
+            this.playlist.push(input);
+            this.savePlaylist();
+            this.musicInput.value = '';
+            this.renderPlaylist();
         }
     }
 
-    addBatchSongs() {
-        const input = this.batchInput.value.trim();
-        if (!input) {
-            alert('Cole as músicas no campo de texto!');
+    addBatchSongs(input = null) {
+        const text = input || this.musicInput.value.trim();
+        if (!text) {
+            alert('Digite ou cole as músicas!');
             return;
         }
 
-        // Quebrar por linhas e adicionar cada uma
-        const lines = input.split('\n')
+        const lines = text.split('\n')
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
@@ -128,19 +99,12 @@ class TeleprompterApp {
 
         this.savePlaylist();
         this.renderPlaylist();
-        this.batchInput.value = '';
+        this.musicInput.value = '';
         
-        // Feedback visual
-        alert(`✅ ${added} música(s) adicionada(s)!`);
-        this.switchMode('single');
+        if (added > 1) {
+            alert(`✅ ${added} música(s) adicionada(s)!`);
+        }
     }
-
-    clearBatchInput() {
-        this.batchInput.value = '';
-        this.batchInput.focus();
-    }
-
-    clearPlaylist() {
         if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
             this.playlist = [];
             this.savePlaylist();
