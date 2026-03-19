@@ -427,16 +427,22 @@ Use este app apenas com fins educacionais e pessoais.`;
         
         const generateAllBtn = document.getElementById('generateAllBtn');
         generateAllBtn.disabled = true;
-        generateAllBtn.textContent = '⏳ Gerando...';
+        generateAllBtn.textContent = '⏳ Gerando... (isso pode levar um tempo)';
         
         this.generatedLyrics = [];
         let success = 0;
         let failed = 0;
         
+        // Processa uma música por vez (sequencial, não paralelo!)
         for (let i = 0; i < this.playlist.length; i++) {
             const song = this.playlist[i];
             this.showLoading(true);
+            
+            // Aguarda cada resultado antes de passar para a próxima
             const result = await this.fetchLyricsImproved(song);
+            
+            // Pequeno delay para não sobrecarregar a API
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             this.generatedLyrics.push({
                 song: song,
@@ -451,6 +457,9 @@ Use este app apenas com fins educacionais e pessoais.`;
             
             this.showLoading(false);
             this.renderGeneratedLyrics();
+            
+            // Atualiza o botão com progresso
+            generateAllBtn.textContent = `⏳ ${i + 1}/${this.playlist.length}`;
         }
         
         generateAllBtn.disabled = false;
