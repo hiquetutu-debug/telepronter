@@ -62,21 +62,44 @@ class TeleprompterApp {
 
     addSongs() {
         const input = this.musicInput.value.trim();
-        if (!input) return;
+        if (!input) {
+            alert('Digite ou cole as músicas!');
+            return;
+        }
         
-        // Remove quebras de linha do Windows (\r\n) e Unix (\n)
-        const lines = input
-            .split(/[\r\n]+/) // Quebra por \r\n ou \n
+        // Debug: log do input
+        console.log('Input recebido:', input.substring(0, 100));
+        console.log('Contém quebra de linha?', /[\r\n]/.test(input));
+        
+        // Estratégia 1: Quebra por quebras de linha (mais comum)
+        let lines = input.split(/[\r\n]+/);
+        
+        // Estratégia 2: Se não achou quebras de linha, tenta separar por números (1., 2., etc)
+        if (lines.length <= 1 || (lines.length === 1 && input.includes('.'))) {
+            console.log('Tentando separar por números...');
+            // Separa por padrão "número. " no início
+            lines = input.split(/\d+\.\s+/).filter(line => line.length > 0);
+        }
+        
+        // Limpa cada linha
+        lines = lines
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        if (lines.length === 0) return;
+        console.log(`Encontradas ${lines.length} linhas`);
+        
+        if (lines.length === 0) {
+            alert('Nenhuma música detectada!');
+            return;
+        }
 
         // Se tem mais de uma linha, trata como lote
         if (lines.length > 1) {
+            console.log('Adicionando como lote:', lines.length, 'músicas');
             this.addBatchSongs(null, lines);
         } else {
             // Uma única música
+            console.log('Adicionando única música:', lines[0]);
             this.playlist.push(lines[0]);
             this.savePlaylist();
             this.musicInput.value = '';
@@ -96,18 +119,27 @@ class TeleprompterApp {
                 return;
             }
 
+            // Múltiplas estratégias de separação
             lines = text
                 .split(/[\r\n]+/)
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
         }
 
-        if (lines.length === 0) return;
+        if (lines.length === 0) {
+            alert('Nenhuma música detectada!');
+            return;
+        }
+
+        console.log('Adicionando', lines.length, 'músicas:', lines);
 
         let added = 0;
-        lines.forEach(line => {
+        lines.forEach((line, idx) => {
             if (line) {
-                this.playlist.push(line);
+                // Remove número do início se tiver (1. , 2. , etc)
+                const cleaned = line.replace(/^\d+\.\s*/, '').trim();
+                console.log(`[${idx + 1}] "${cleaned}"`);
+                this.playlist.push(cleaned);
                 added++;
             }
         });
@@ -117,7 +149,7 @@ class TeleprompterApp {
         this.musicInput.value = '';
         
         if (added > 1) {
-            alert(`✅ ${added} música(s) adicionada(s)!`);
+            alert(`✅ ${added} música(s) adicionada(s)!\n\nAbra o DevTools (F12) e veja o console para debug.`);
         }
     }
         if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
@@ -137,7 +169,7 @@ class TeleprompterApp {
         this.playlistUl.innerHTML = this.playlist.map((song, index) => `
             <li class="playlist-item" data-index="${index}">
                 <div class="song-info">
-                    <div class="song-title">🎵 ${this.escapeHtml(song)}</div>
+                    <div class="song-title">🎵 ${index + 1}. ${this.escapeHtml(song)}</div>
                 </div>
                 <div class="item-actions">
                     <button class="btn-small btn-play-item" onclick="app.openSongLyrics(${index})">Ver Letra</button>
