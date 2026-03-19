@@ -61,32 +61,27 @@ class TeleprompterApp {
     }
 
     addSongs() {
-        const input = this.musicInput.value.trim();
+        let input = this.musicInput.value.trim();
         if (!input) {
             alert('Digite ou cole as músicas!');
             return;
         }
         
-        // Debug: log do input
-        console.log('Input recebido:', input.substring(0, 100));
-        console.log('Contém quebra de linha?', /[\r\n]/.test(input));
+        // Auto-format: normaliza travessões e espaçamento
+        input = this.autoFormatInput(input);
         
-        // Estratégia 1: Quebra por quebras de linha (mais comum)
+        console.log('Input após auto-format:', input.substring(0, 100));
+        
+        // Separa por quebras de linha
         let lines = input.split(/[\r\n]+/);
         
-        // Estratégia 2: Se não achou quebras de linha, tenta separar por números (1., 2., etc)
-        if (lines.length <= 1 || (lines.length === 1 && input.includes('.'))) {
-            console.log('Tentando separar por números...');
-            // Separa por padrão "número. " no início
-            lines = input.split(/\d+\.\s+/).filter(line => line.length > 0);
-        }
-        
-        // Limpa cada linha
+        // Limpa e filtra
         lines = lines
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
         console.log(`Encontradas ${lines.length} linhas`);
+        lines.slice(0, 3).forEach((line, i) => console.log(`[${i + 1}] "${line}"`));
         
         if (lines.length === 0) {
             alert('Nenhuma música detectada!');
@@ -105,6 +100,26 @@ class TeleprompterApp {
             this.musicInput.value = '';
             this.renderPlaylist();
         }
+    }
+
+    autoFormatInput(input) {
+        // Normaliza travessões para hífen
+        // – (en dash)
+        // — (em dash)  
+        // ‐ (hyphen)
+        // Todos viram "-"
+        input = input.replace(/–|—|‐/g, ' - ');
+        
+        // Remove números no inicio (1. , 2. , etc) e mantém só a música
+        input = input.replace(/^\d+\.\s*/gm, '');
+        
+        // Normaliza espaços ao redor do separador
+        input = input.replace(/\s*-\s*/g, ' - ');
+        
+        // Remove espaços múltiplos
+        input = input.replace(/\s+/g, ' ');
+        
+        return input;
     }
 
     addBatchSongs(input = null, preProcessedLines = null) {
@@ -131,16 +146,14 @@ class TeleprompterApp {
             return;
         }
 
-        console.log('Adicionando', lines.length, 'músicas:', lines);
+        console.log('Adicionando', lines.length, 'músicas');
 
         let added = 0;
         lines.forEach((line, idx) => {
-            if (line) {
-                // Remove número do início se tiver (1. , 2. , etc)
-                const cleaned = line.replace(/^\d+\.\s*/, '').trim();
-                console.log(`[${idx + 1}] "${cleaned}"`);
-                this.playlist.push(cleaned);
+            if (line && line.length > 2) {  // Mínimo 2 caracteres
+                this.playlist.push(line);
                 added++;
+                if (idx < 3) console.log(`  [${idx + 1}] "${line}"`);
             }
         });
 
@@ -149,7 +162,7 @@ class TeleprompterApp {
         this.musicInput.value = '';
         
         if (added > 1) {
-            alert(`✅ ${added} música(s) adicionada(s)!\n\nAbra o DevTools (F12) e veja o console para debug.`);
+            alert(`✅ ${added} música(s) adicionada(s)!`);
         }
     }
         if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
