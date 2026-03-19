@@ -650,6 +650,16 @@ body {
     transition: all 0.3s ease;
 }
 
+.generated-item.found {
+    background: rgba(22, 199, 132, 0.1);
+    border-left: 4px solid var(--primary);
+}
+
+.generated-item.not-found {
+    background: rgba(231, 76, 60, 0.1);
+    border-left: 4px solid var(--error);
+}
+
 .generated-item:hover {
     background: rgba(22, 199, 132, 0.2);
     border-color: var(--primary);

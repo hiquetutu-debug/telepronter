@@ -230,6 +230,46 @@ Exemplos:
 Use este app apenas com fins educacionais e pessoais.`;
     }
 
+    async fetchLyricsImproved(songQuery) {
+        try {
+            // Tenta múltiplos formatos de busca
+            const parts = songQuery.split(' - ').map(s => s.trim());
+            
+            // Formato 1: Artista - Título
+            if (parts.length === 2) {
+                const [artist, title] = parts;
+                const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.lyrics && data.lyrics.length > 100) {
+                        return { found: true, lyrics: data.lyrics };
+                    }
+                }
+                
+                // Formato 2: Título - Artista (invertido)
+                const response2 = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(title)}/${encodeURIComponent(artist)}`);
+                if (response2.ok) {
+                    const data = await response2.json();
+                    if (data.lyrics && data.lyrics.length > 100) {
+                        return { found: true, lyrics: data.lyrics };
+                    }
+                }
+            }
+            
+            // Se não encontrou
+            return { 
+                found: false, 
+                lyrics: `❌ Letra não encontrada para: "${songQuery}"\n\nDicas:\n• Verifique se o nome está correto\n• Use o formato: "Artista - Título"\n• Tente buscar no Google o nome exato\n\nExemplos que funcionam:\n• The Beatles - Imagine\n• Nirvana - In Bloom\n• Legião Urbana - Que País É Este` 
+            };
+        } catch (error) {
+            console.log('Erro ao buscar letras:', error);
+            return { 
+                found: false, 
+                lyrics: `❌ Erro ao conectar com o servidor.\n\nVerifique sua conexão de internet e tente novamente.` 
+            };
+        }
+    }
+
     toggleScroll() {
         this.isScrolling = !this.isScrolling;
         
@@ -362,16 +402,25 @@ Use este app apenas com fins educacionais e pessoais.`;
         generateAllBtn.textContent = '⏳ Gerando...';
         
         this.generatedLyrics = [];
+        let success = 0;
+        let failed = 0;
         
         for (let i = 0; i < this.playlist.length; i++) {
             const song = this.playlist[i];
             this.showLoading(true);
-            const lyrics = await this.fetchLyrics(song);
+            const result = await this.fetchLyricsImproved(song);
+            
             this.generatedLyrics.push({
                 song: song,
-                lyrics: lyrics,
-                timestamp: new Date().toLocaleTimeString()
+                lyrics: result.lyrics,
+                timestamp: new Date().toLocaleTimeString(),
+                status: result.found ? '✅' : '❌',
+                found: result.found
             });
+            
+            if (result.found) success++;
+            else failed++;
+            
             this.showLoading(false);
             this.renderGeneratedLyrics();
         }
@@ -380,6 +429,10 @@ Use este app apenas com fins educacionais e pessoais.`;
         generateAllBtn.textContent = '⚡ Gerar Todas';
         this.isGeneratingAll = false;
         this.showGeneratedSection();
+        
+        setTimeout(() => {
+            alert(`✅ ${success}/${this.playlist.length} letras encontradas\n❌ ${failed} não encontradas\n\nClique em "Ver Completo" nas com ❌ para tentar novamente.`);
+        }, 500);
     }
 
     renderGeneratedLyrics() {
@@ -393,9 +446,9 @@ Use este app apenas com fins educacionais e pessoais.`;
         
         section.classList.remove('hidden');
         list.innerHTML = this.generatedLyrics.map((item, index) => `
-            <div class="generated-item">
+            <div class="generated-item ${item.found ? 'found' : 'not-found'}">
                 <div class="generated-item-header">
-                    <h3>${index + 1}. ${this.escapeHtml(item.song)}</h3>
+                    <h3>${item.status} ${index + 1}. ${this.escapeHtml(item.song)}</h3>
                     <span class="generated-time">${item.timestamp}</span>
                 </div>
                 <div class="generated-item-lyrics">
