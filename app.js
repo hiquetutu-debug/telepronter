@@ -122,6 +122,34 @@ class TeleprompterApp {
         return input;
     }
 
+    detectAndFormatPairs(lines) {
+        // Verifica se as linhas vêm em pares (Música, Banda, Música, Banda...)
+        if (lines.length < 2 || lines.length % 2 !== 0) {
+            return null;  // Não é um padrão de pares
+        }
+
+        // Tenta detectar se é uma sequência de pares
+        const formatted = [];
+        for (let i = 0; i < lines.length; i += 2) {
+            const first = lines[i];
+            const second = lines[i + 1];
+            
+            // Ambas as linhas devem ter entre 2 e 50 caracteres para ser considerado válido
+            if (first && second && 
+                first.length >= 2 && first.length <= 50 &&
+                second.length >= 2 && second.length <= 50 &&
+                !first.includes(' - ') && !second.includes(' - ')) {
+                
+                // Se parecer como "Música - Banda", manter
+                formatted.push(`${first} - ${second}`);
+            } else {
+                return null;  // Padrão não é válido
+            }
+        }
+
+        return formatted.length > 0 ? formatted : null;
+    }
+
     addBatchSongs(input = null, preProcessedLines = null) {
         let lines;
         
@@ -144,6 +172,13 @@ class TeleprompterApp {
         if (lines.length === 0) {
             alert('Nenhuma música detectada!');
             return;
+        }
+
+        // Tenta detectar o padrão de pares (Música, Banda)
+        const pairedLines = this.detectAndFormatPairs(lines);
+        if (pairedLines) {
+            lines = pairedLines;
+            console.log(`Detectado formato em pares! Convertidas ${lines.length} músicas`);
         }
 
         console.log('Adicionando', lines.length, 'músicas');
