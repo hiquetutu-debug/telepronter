@@ -79,65 +79,74 @@ class TeleprompterApp {
     }
 
     addSongs() {
-        console.log('📝 addSongs foi chamado!');
-        let input = this.musicInput.value.trim();
-        console.log('❶ Entrada bruta:', input.substring(0, 80));
+        console.log('%c🎵 INICIANDO ADIÇÃO DE MÚSICAS', 'color: blue; font-size: 14px;');
         
-        if (!input) {
-            alert('Digite ou cole as músicas!');
-            return;
-        }
-        
-        // ❌ Não fazer autoFormatInput aqui! Isso está quebrando as linhas
-        // Vamos fazer o format linha por linha depois
-        console.log('❷ Antes do split por linhas');
+        try {
+            let input = this.musicInput.value.trim();
+            console.log('❶ Entrada bruta:', input.substring(0, 80));
+            
+            if (!input) {
+                alert('Digite ou cole as músicas!');
+                return;
+            }
+            
+            // Fazer o split ANTES do autoFormatInput para preservar quebras de linha
+            let lines = input.split(/[\r\n]+/);
+            console.log(`❷ Após split: ${lines.length} linhas`);
+            
+            // Limpar linhas vazias e fazer trim
+            lines = lines
+                .map(line => line.trim())
+                .filter(line => line.length > 0);
 
-        let lines = input.split(/[\r\n]+/);
-        console.log(`❸ Após split: ${lines.length} linhas encontradas`);
-        
-        lines = lines
-            .map(line => line.trim())
-            .filter(line => line.length > 0);
+            console.log(`❸ Após limpeza: ${lines.length} linhas`);
+            
+            if (lines.length === 0) {
+                alert('Nenhuma música detectada!');
+                return;
+            }
 
-        console.log(`❹ Após limpeza: ${lines.length} linhas`);
-        
-        if (lines.length === 0) {
-            alert('Nenhuma música detectada!');
-            return;
-        }
+            // Aplicar autoFormatInput por linha, mantendo quebras
+            lines = lines.map(line => {
+                line = line.trim();
+                line = line.replace(/–|—|‐/g, ' - ');
+                line = line.replace(/^\d+\.\s*/g, '');
+                line = line.replace(/\s*-\s*/g, ' - ');
+                line = line.replace(/  +/g, ' ');
+                return line;
+            });
 
-        // Agora aplicar autoFormatInput por linha
-        lines = lines.map(line => {
-            line = line.trim();
-            line = line.replace(/–|—|‐/g, ' - ');
-            line = line.replace(/^\d+\.\s*/g, '');
-            line = line.replace(/\s*-\s*/g, ' - ');
-            line = line.replace(/  +/g, ' ');
-            return line;
-        });
+            console.log(`❹ Após auto-format: ${lines.length} linhas`);
+            console.log('Primeiras 5 linhas:');
+            lines.slice(0, 5).forEach((line, i) => console.log(`  [${i + 1}] "${line}"`));
 
-        console.log(`❺ Após auto-format:`);
-        lines.slice(0, 5).forEach((line, i) => console.log(`  [${i + 1}] "${line}"`));
-
-        if (lines.length > 1) {
-            console.log('▶️ Adicionando como lote:', lines.length, 'músicas');
-            this.addBatchSongs(null, lines);
-        } else {
-            console.log('▶️ Adicionando única música:', lines[0]);
-            this.playlist.push(lines[0]);
-            this.savePlaylist();
-            this.musicInput.value = '';
-            this.renderPlaylist();
+            if (lines.length > 1) {
+                console.log(`▶️ Adicionando como lote: ${lines.length} músicas`);
+                this.addBatchSongs(null, lines);
+            } else {
+                console.log('▶️ Adicionando única música:', lines[0]);
+                this.playlist.push(lines[0]);
+                this.savePlaylist();
+                this.musicInput.value = '';
+                this.renderPlaylist();
+            }
+        } catch (error) {
+            console.error('❌ ERRO em addSongs:', error);
+            alert('Erro ao adicionar músicas: ' + error.message);
         }
     }
 
     autoFormatInput(input) {
+        console.log('🔧 autoFormatInput iniciado');
+        
         // Preservar quebras de linha!
-        // Trabalhar linha por linha
         const lines = input.split(/[\r\n]+/);
+        console.log('➤ Linhas antes:', lines.length);
         
         const formatted = lines.map(line => {
             line = line.trim();
+            if (line.length === 0) return '';
+            
             // Normaliza travessões para hífen
             line = line.replace(/–|—|‐/g, ' - ');
             // Remove números no inicio (1. , 2. , etc)
@@ -146,13 +155,23 @@ class TeleprompterApp {
             line = line.replace(/\s*-\s*/g, ' - ');
             // Remove espaços múltiplos (mas NÃO quebras de linha!)
             line = line.replace(/  +/g, ' ');
+            
             return line;
         });
         
-        return formatted.join('\n');
+        const result = formatted.join('\n');
+        console.log('➤ Linhas depois:', result.split('\n').length);
+        return result;
     }
 
     detectAndFormatPairs(lines) {
+        console.log('🔍 detectAndFormatPairs: verificando', lines.length, 'linhas');
+        
+        // Desabilitado por enquanto
+        return null;
+        
+        // TODO: Implementar melhor
+        /*
         if (lines.length < 2 || lines.length % 2 !== 0) {
             return null;
         }
@@ -173,13 +192,16 @@ class TeleprompterApp {
         }
 
         return formatted.length > 0 ? formatted : null;
+        */
     }
 
     addBatchSongs(input = null, preProcessedLines = null) {
+        console.log('📦 addBatchSongs iniciado');
         let lines;
         
         if (preProcessedLines) {
             lines = preProcessedLines;
+            console.log('✅ Usando preProcessedLines:', lines.length, 'linhas');
         } else {
             const text = input || this.musicInput.value.trim();
             if (!text) {
@@ -191,6 +213,7 @@ class TeleprompterApp {
                 .split(/[\r\n]+/)
                 .map(line => line.trim())
                 .filter(line => line.length > 0);
+            console.log('✅ Parse do textarea:', lines.length, 'linhas');
         }
 
         if (lines.length === 0) {
@@ -198,31 +221,39 @@ class TeleprompterApp {
             return;
         }
 
+        // Tenta detectar o padrão de pares (DESABILITADO)
         const pairedLines = this.detectAndFormatPairs(lines);
         if (pairedLines) {
             lines = pairedLines;
             console.log(`✅ Detectado formato em pares! Convertidas ${lines.length} músicas`);
         }
 
-        console.log('📊 Adicionando', lines.length, 'músicas');
-        console.log('Linhas:', lines);
+        console.log('📊 Adicionando', lines.length, 'músicas à playlist');
 
         let added = 0;
+        const invalidLines = [];
+        
         lines.forEach((line, idx) => {
             if (line && line.length > 2) {
                 this.playlist.push(line);
                 added++;
                 if (idx < 5) console.log(`  ✅ [${added}] "${line}"`);
+            } else {
+                invalidLines.push(line);
             }
         });
 
-        console.log(`🎵 Total de músicas adicionadas: ${added}`);
+        if (invalidLines.length > 0) {
+            console.warn('⚠️ Linhas rejeitadas (muito curtas):', invalidLines);
+        }
+
+        console.log(`🎵 Total adicionado: ${added}/${lines.length}`);
         this.savePlaylist();
         this.renderPlaylist();
         this.musicInput.value = '';
         
         if (added > 1) {
-            alert(`✅ ${added} música(s) adicionada(s)!`);
+            alert(`✅ ${added} música(s) adicionada(s) com sucesso!`);
         }
     }
 
