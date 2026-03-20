@@ -81,34 +81,49 @@ class TeleprompterApp {
     addSongs() {
         console.log('📝 addSongs foi chamado!');
         let input = this.musicInput.value.trim();
-        console.log('Entrada:', input.substring(0, 50));
+        console.log('❶ Entrada bruta:', input.substring(0, 80));
         
         if (!input) {
             alert('Digite ou cole as músicas!');
             return;
         }
         
-        input = this.autoFormatInput(input);
-        console.log('Input após auto-format:', input.substring(0, 100));
-        
+        // ❌ Não fazer autoFormatInput aqui! Isso está quebrando as linhas
+        // Vamos fazer o format linha por linha depois
+        console.log('❷ Antes do split por linhas');
+
         let lines = input.split(/[\r\n]+/);
+        console.log(`❸ Após split: ${lines.length} linhas encontradas`);
+        
         lines = lines
             .map(line => line.trim())
             .filter(line => line.length > 0);
 
-        console.log(`Encontradas ${lines.length} linhas`);
-        lines.slice(0, 3).forEach((line, i) => console.log(`[${i + 1}] "${line}"`));
+        console.log(`❹ Após limpeza: ${lines.length} linhas`);
         
         if (lines.length === 0) {
             alert('Nenhuma música detectada!');
             return;
         }
 
+        // Agora aplicar autoFormatInput por linha
+        lines = lines.map(line => {
+            line = line.trim();
+            line = line.replace(/–|—|‐/g, ' - ');
+            line = line.replace(/^\d+\.\s*/g, '');
+            line = line.replace(/\s*-\s*/g, ' - ');
+            line = line.replace(/  +/g, ' ');
+            return line;
+        });
+
+        console.log(`❺ Após auto-format:`);
+        lines.slice(0, 5).forEach((line, i) => console.log(`  [${i + 1}] "${line}"`));
+
         if (lines.length > 1) {
-            console.log('Adicionando como lote:', lines.length, 'músicas');
+            console.log('▶️ Adicionando como lote:', lines.length, 'músicas');
             this.addBatchSongs(null, lines);
         } else {
-            console.log('Adicionando única música:', lines[0]);
+            console.log('▶️ Adicionando única música:', lines[0]);
             this.playlist.push(lines[0]);
             this.savePlaylist();
             this.musicInput.value = '';
@@ -117,11 +132,24 @@ class TeleprompterApp {
     }
 
     autoFormatInput(input) {
-        input = input.replace(/–|—|‐/g, ' - ');
-        input = input.replace(/^\d+\.\s*/gm, '');
-        input = input.replace(/\s*-\s*/g, ' - ');
-        input = input.replace(/\s+/g, ' ');
-        return input;
+        // Preservar quebras de linha!
+        // Trabalhar linha por linha
+        const lines = input.split(/[\r\n]+/);
+        
+        const formatted = lines.map(line => {
+            line = line.trim();
+            // Normaliza travessões para hífen
+            line = line.replace(/–|—|‐/g, ' - ');
+            // Remove números no inicio (1. , 2. , etc)
+            line = line.replace(/^\d+\.\s*/g, '');
+            // Normaliza espaços ao redor do separador
+            line = line.replace(/\s*-\s*/g, ' - ');
+            // Remove espaços múltiplos (mas NÃO quebras de linha!)
+            line = line.replace(/  +/g, ' ');
+            return line;
+        });
+        
+        return formatted.join('\n');
     }
 
     detectAndFormatPairs(lines) {
@@ -173,20 +201,22 @@ class TeleprompterApp {
         const pairedLines = this.detectAndFormatPairs(lines);
         if (pairedLines) {
             lines = pairedLines;
-            console.log(`Detectado formato em pares! Convertidas ${lines.length} músicas`);
+            console.log(`✅ Detectado formato em pares! Convertidas ${lines.length} músicas`);
         }
 
-        console.log('Adicionando', lines.length, 'músicas');
+        console.log('📊 Adicionando', lines.length, 'músicas');
+        console.log('Linhas:', lines);
 
         let added = 0;
         lines.forEach((line, idx) => {
             if (line && line.length > 2) {
                 this.playlist.push(line);
                 added++;
-                if (idx < 3) console.log(`  [${idx + 1}] "${line}"`);
+                if (idx < 5) console.log(`  ✅ [${added}] "${line}"`);
             }
         });
 
+        console.log(`🎵 Total de músicas adicionadas: ${added}`);
         this.savePlaylist();
         this.renderPlaylist();
         this.musicInput.value = '';
@@ -206,12 +236,16 @@ class TeleprompterApp {
     }
 
     renderPlaylist() {
+        console.log('🎨 renderPlaylist chamado, total de músicas:', this.playlist.length);
+        
         if (this.playlist.length === 0) {
             this.playlistUl.innerHTML = '<li class="empty-state">Adicione uma música para começar!</li>';
             return;
         }
 
-        this.playlistUl.innerHTML = this.playlist.map((song, index) => `
+        this.playlistUl.innerHTML = this.playlist.map((song, index) => {
+            console.log(`  🎵 Item ${index + 1}:`, song.substring(0, 40));
+            return `
             <li class="playlist-item" data-index="${index}">
                 <div class="song-info">
                     <div class="song-title">🎵 ${index + 1}. ${this.escapeHtml(song)}</div>
@@ -221,7 +255,9 @@ class TeleprompterApp {
                     <button class="btn-small btn-delete" onclick="app.deleteSong(${index})">Deletar</button>
                 </div>
             </li>
-        `).join('');
+        `}).join('');
+        
+        console.log('✅ renderPlaylist completo');
     }
 
     deleteSong(index) {
