@@ -200,6 +200,8 @@ class TeleprompterApp {
             alert(`✅ ${added} música(s) adicionada(s)!`);
         }
     }
+
+    clearPlaylist() {
         if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
             this.playlist = [];
             this.savePlaylist();
