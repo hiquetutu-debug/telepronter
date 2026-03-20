@@ -1,5 +1,8 @@
+console.log('✅ app.js sendo carregado...');
+
 class TeleprompterApp {
     constructor() {
+        console.log('🔧 TeleprompterApp constructor iniciado');
         this.playlist = this.loadPlaylist();
         this.generatedLyrics = this.loadGeneratedLyrics();
         this.currentSong = null;
@@ -9,12 +12,16 @@ class TeleprompterApp {
         this.scrollContainer = null;
         this.isGeneratingAll = false;
         
+        console.log('📋 Playlist carregada:', this.playlist);
         this.initElements();
+        console.log('✅ initElements completo');
         this.attachEventListeners();
+        console.log('✅ attachEventListeners completo');
         this.registerServiceWorker();
         this.handleInstallPrompt();
         this.renderPlaylist();
         this.renderGeneratedLyrics();
+        console.log('✅ TeleprompterApp inicializado com sucesso!');
     }
 
     initElements() {
@@ -38,8 +45,18 @@ class TeleprompterApp {
     }
 
     attachEventListeners() {
-        this.addBtn.addEventListener('click', () => this.addSongs());
-        this.clearBtn.addEventListener('click', () => this.clearPlaylist());
+        console.log('🎯 Iniciando attachEventListeners...');
+        console.log('addBtn:', this.addBtn);
+        console.log('clearBtn:', this.clearBtn);
+        
+        this.addBtn.addEventListener('click', () => {
+            console.log('🔥 Botão ADICIONAR clicado!');
+            this.addSongs();
+        });
+        this.clearBtn.addEventListener('click', () => {
+            console.log('🗑️ Botão LIMPAR clicado!');
+            this.clearPlaylist();
+        });
         this.musicInput.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'Enter') {
                 this.addSongs();
@@ -58,10 +75,14 @@ class TeleprompterApp {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') this.closeModal();
         });
+        console.log('✅ attachEventListeners completo!');
     }
 
     addSongs() {
+        console.log('📝 addSongs foi chamado!');
         let input = this.musicInput.value.trim();
+        console.log('Entrada:', input.substring(0, 50));
+        
         if (!input) {
             alert('Digite ou cole as músicas!');
             return;
@@ -606,7 +627,28 @@ Use este app apenas com fins educacionais e pessoais.`;
 
 // Inicializar app
 let app;
-document.addEventListener('DOMContentLoaded', () => {
-    app = new TeleprompterApp();
-    console.log('✅ App inicializado!');
+
+// Tratamento de erros global
+window.addEventListener('error', (event) => {
+    console.error('❌ Erro global:', event.error);
 });
+
+console.log('📌 Aguardando DOMContentLoaded...');
+
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        console.log('🚀 DOMContentLoaded disparado!');
+        app = new TeleprompterApp();
+        console.log('✅ App inicializado com sucesso!');
+        console.log('🎯 app global:', app);
+    } catch (error) {
+        console.error('❌ Erro ao inicializar app:', error);
+    }
+});
+
+// Fallback se o DOM já foi carregado
+if (document.readyState === 'loading') {
+    console.log('📌 Documento ainda está carregando');
+} else {
+    console.log('⚠️  DOMContentLoaded deve ter disparado antes de app.js ser carregado');
+}
