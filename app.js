@@ -67,15 +67,10 @@ class TeleprompterApp {
             return;
         }
         
-        // Auto-format: normaliza travessões e espaçamento
         input = this.autoFormatInput(input);
-        
         console.log('Input após auto-format:', input.substring(0, 100));
         
-        // Separa por quebras de linha
         let lines = input.split(/[\r\n]+/);
-        
-        // Limpa e filtra
         lines = lines
             .map(line => line.trim())
             .filter(line => line.length > 0);
@@ -88,12 +83,10 @@ class TeleprompterApp {
             return;
         }
 
-        // Se tem mais de uma linha, trata como lote
         if (lines.length > 1) {
             console.log('Adicionando como lote:', lines.length, 'músicas');
             this.addBatchSongs(null, lines);
         } else {
-            // Uma única música
             console.log('Adicionando única música:', lines[0]);
             this.playlist.push(lines[0]);
             this.savePlaylist();
@@ -103,47 +96,30 @@ class TeleprompterApp {
     }
 
     autoFormatInput(input) {
-        // Normaliza travessões para hífen
-        // – (en dash)
-        // — (em dash)  
-        // ‐ (hyphen)
-        // Todos viram "-"
         input = input.replace(/–|—|‐/g, ' - ');
-        
-        // Remove números no inicio (1. , 2. , etc) e mantém só a música
         input = input.replace(/^\d+\.\s*/gm, '');
-        
-        // Normaliza espaços ao redor do separador
         input = input.replace(/\s*-\s*/g, ' - ');
-        
-        // Remove espaços múltiplos
         input = input.replace(/\s+/g, ' ');
-        
         return input;
     }
 
     detectAndFormatPairs(lines) {
-        // Verifica se as linhas vêm em pares (Música, Banda, Música, Banda...)
         if (lines.length < 2 || lines.length % 2 !== 0) {
-            return null;  // Não é um padrão de pares
+            return null;
         }
 
-        // Tenta detectar se é uma sequência de pares
         const formatted = [];
         for (let i = 0; i < lines.length; i += 2) {
             const first = lines[i];
             const second = lines[i + 1];
             
-            // Ambas as linhas devem ter entre 2 e 50 caracteres para ser considerado válido
             if (first && second && 
                 first.length >= 2 && first.length <= 50 &&
                 second.length >= 2 && second.length <= 50 &&
                 !first.includes(' - ') && !second.includes(' - ')) {
-                
-                // Se parecer como "Música - Banda", manter
                 formatted.push(`${first} - ${second}`);
             } else {
-                return null;  // Padrão não é válido
+                return null;
             }
         }
 
@@ -162,7 +138,6 @@ class TeleprompterApp {
                 return;
             }
 
-            // Múltiplas estratégias de separação
             lines = text
                 .split(/[\r\n]+/)
                 .map(line => line.trim())
@@ -174,7 +149,6 @@ class TeleprompterApp {
             return;
         }
 
-        // Tenta detectar o padrão de pares (Música, Banda)
         const pairedLines = this.detectAndFormatPairs(lines);
         if (pairedLines) {
             lines = pairedLines;
@@ -185,7 +159,7 @@ class TeleprompterApp {
 
         let added = 0;
         lines.forEach((line, idx) => {
-            if (line && line.length > 2) {  // Mínimo 2 caracteres
+            if (line && line.length > 2) {
                 this.playlist.push(line);
                 added++;
                 if (idx < 3) console.log(`  [${idx + 1}] "${line}"`);
@@ -251,11 +225,9 @@ class TeleprompterApp {
 
     async fetchLyrics(songQuery) {
         try {
-            // Tentar buscar de uma API legítima
             const [title, artist] = songQuery.split(' - ').map(s => s.trim());
             
             if (artist) {
-                // Usar API lyrics.ovh (gratuita e legal)
                 const response = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
                 if (response.ok) {
                     const data = await response.json();
@@ -265,7 +237,6 @@ class TeleprompterApp {
                 }
             }
             
-            // Fallback: demonstração
             return this.getDemoLyrics(songQuery);
         } catch (error) {
             console.log('Erro ao buscar letras:', error);
@@ -293,7 +264,6 @@ Use este app apenas com fins educacionais e pessoais.`;
 
     async fetchLyricsImproved(songQuery) {
         try {
-            // Step 1: Limpar a entrada
             let cleaned = this.cleanSongQuery(songQuery);
             
             if (!cleaned) {
@@ -303,7 +273,6 @@ Use este app apenas com fins educacionais e pessoais.`;
                 };
             }
 
-            // Step 2: Tentar múltiplos separadores e formatos
             const separators = [' - ', ' -- ', ' / ', ' de ', ' by ', '|', '–', '—'];
             const formats = this.generateSearchFormats(cleaned, separators);
 
@@ -314,16 +283,14 @@ Use este app apenas com fins educacionais e pessoais.`;
                 }
             }
             
-            // Step 3: Se não encontrou com separadores, tenta palavra-chave única
             const singleWordResult = await this.searchLyricsAPI(cleaned, '');
             if (singleWordResult.found) {
                 return { found: true, lyrics: singleWordResult.lyrics };
             }
 
-            // Se não encontrou
             return { 
                 found: false, 
-                lyrics: `❌ Letra não encontrada para: "${songQuery}"\n\nTente:\n• Verificar ortografia\n• Usar formato "Artista - Título" ou "Título - Artista"\n• Procurar o nome no Google para confirmar\n\nExemplos que funcionam:\n• Nirvana - In Bloom\n• In Bloom - Nirvana\n• The Beatles - Imagine` 
+                lyrics: `❌ Letra não encontrada para: "${songQuery}"\n\nTente:\n• Verificar ortografia\n• Usar formato "Artista - Título" ou "Título - Artista"\n• Procurar o nome no Google para confirmar` 
             };
         } catch (error) {
             console.log('Erro ao buscar letras:', error);
@@ -335,12 +302,8 @@ Use este app apenas com fins educacionais e pessoais.`;
     }
 
     cleanSongQuery(query) {
-        // Remove números no início (1., 2., etc)
         let cleaned = query.replace(/^\d+\.\s*/, '').trim();
-        
-        // Remove caracteres especiais extras mas mantém separadores
         cleaned = cleaned.replace(/\s+/g, ' ').trim();
-        
         return cleaned || null;
     }
 
@@ -352,13 +315,11 @@ Use este app apenas com fins educacionais e pessoais.`;
                 const parts = songQuery.split(sep).map(p => p.trim()).filter(p => p);
                 
                 if (parts.length === 2) {
-                    // Formato 1: primeira parte = artista, segunda = título
                     formats.push({
                         artist: parts[0],
                         title: parts[1]
                     });
                     
-                    // Formato 2: invertido
                     formats.push({
                         artist: parts[1],
                         title: parts[0]
@@ -372,9 +333,7 @@ Use este app apenas com fins educacionais e pessoais.`;
 
     async searchLyricsAPI(artist, title) {
         try {
-            // Se apenas um termo, tenta buscar como artista com qualquer título
             if (!title || title.length === 0) {
-                // Isso depende da API - lyrics.ovh precisa de ambos
                 return { found: false };
             }
 
@@ -530,15 +489,12 @@ Use este app apenas com fins educacionais e pessoais.`;
         let success = 0;
         let failed = 0;
         
-        // Processa uma música por vez (sequencial, não paralelo!)
         for (let i = 0; i < this.playlist.length; i++) {
             const song = this.playlist[i];
             this.showLoading(true);
             
-            // Aguarda cada resultado antes de passar para a próxima
             const result = await this.fetchLyricsImproved(song);
             
-            // Pequeno delay para não sobrecarregar a API
             await new Promise(resolve => setTimeout(resolve, 300));
             
             this.generatedLyrics.push({
@@ -555,7 +511,6 @@ Use este app apenas com fins educacionais e pessoais.`;
             this.showLoading(false);
             this.renderGeneratedLyrics();
             
-            // Atualiza o botão com progresso
             generateAllBtn.textContent = `⏳ ${i + 1}/${this.playlist.length}`;
         }
         
@@ -565,7 +520,7 @@ Use este app apenas com fins educacionais e pessoais.`;
         this.showGeneratedSection();
         
         setTimeout(() => {
-            alert(`✅ ${success}/${this.playlist.length} letras encontradas\n❌ ${failed} não encontradas\n\nClique em "Ver Completo" nas com ❌ para tentar novamente.`);
+            alert(`✅ ${success}/${this.playlist.length} letras encontradas\n❌ ${failed} não encontradas`);
         }, 500);
     }
 
@@ -649,8 +604,9 @@ Use este app apenas com fins educacionais e pessoais.`;
     }
 }
 
-// Inicializar app quando o DOM estiver pronto
+// Inicializar app
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new TeleprompterApp();
+    console.log('✅ App inicializado!');
 });
